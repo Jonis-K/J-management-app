@@ -1,12 +1,29 @@
 import PageHeader from "@/components/PageHeader";
+import GoalsTableClient from "@/components/GoalsTableClient";
 
-export default function GoalsPage() {
+export const dynamic = "force-dynamic";
+
+async function getGoals() {
+  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000";
+  const res = await fetch(`${baseUrl}/api/goals`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const json = await res.json();
+  return json.data || [];
+}
+
+export default async function GoalsPage() {
+  const goals = await getGoals();
+
   return (
-    <div className="space-y-4">
-      <PageHeader title="Goals" />
-      <div className="rounded-md border border-black/10 p-4 text-sm text-black/70">
-        ダミー：目標の一覧や進捗を表示します
+    <main className="flex flex-col gap-6">
+      <div className="flex items-center justify-between">
+        <PageHeader title="目標管理" />
+        <div className="text-sm text-neutral-500">
+          件数: <span className="font-medium text-neutral-900">{goals.length}</span>
+        </div>
       </div>
-    </div>
+
+      <GoalsTableClient goals={goals} />
+    </main>
   );
 }
