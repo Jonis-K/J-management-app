@@ -20,16 +20,30 @@ type Member = {
  * Google Driveの共有リンク等を直接表示可能なURLに変換する
  */
 function fixImageUrl(url: string): string {
-  if (!url) return "";
+  const u = (url ?? "").trim();
+  if (!u) return "";
 
-  // Google Drive 共有リンク
-  // https://drive.google.com/file/d/FILE_ID/view?usp=sharing
-  const driveMatch = url.match(/\/file\/d\/([^/]+)/);
-  if (driveMatch && driveMatch[1]) {
-    return `https://lh3.googleusercontent.com/u/0/d/${driveMatch[1]}`;
+  // 1) file/d/<ID> パターン
+  const fileIdMatch = u.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (fileIdMatch?.[1]) {
+    return `https://drive.google.com/uc?export=view&id=${fileIdMatch[1]}`;
   }
 
-  return url;
+  // 2) open?id=<ID> や uc?id=<ID> パターン
+  const idParamMatch = u.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (idParamMatch?.[1] && u.includes("drive.google.com")) {
+    return `https://drive.google.com/uc?export=view&id=${idParamMatch[1]}`;
+  }
+
+  // 3) すでに uc の場合は export=view に寄せる（idが取れれば）
+  if (u.includes("drive.google.com/uc")) {
+    const id2 = u.match(/[?&]id=([a-zA-Z0-9_-]+)/)?.[1];
+    if (id2) return `https://drive.google.com/uc?export=view&id=${id2}`;
+    return u;
+  }
+
+  // 4) それ以外（直URL等）はそのまま
+  return u;
 }
 
 export default function MembersTableClient({ members }: { members: Member[] }) {
@@ -101,7 +115,7 @@ export default function MembersTableClient({ members }: { members: Member[] }) {
                         fill
                         className="object-cover"
                         sizes="40px"
-                        unoptimized={!fixImageUrl(m.photo_url).includes("googleusercontent")}
+                        unoptimized={fixImageUrl(m.photo_url).includes("drive.google.com")}
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-[10px] text-neutral-400">
