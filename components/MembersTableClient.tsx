@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Image from "next/image";
 
 type Member = {
   member_id: string;
@@ -14,6 +15,22 @@ type Member = {
   role: string;
   updated_at: string;
 };
+
+/**
+ * Google Driveの共有リンク等を直接表示可能なURLに変換する
+ */
+function fixImageUrl(url: string): string {
+  if (!url) return "";
+
+  // Google Drive 共有リンク
+  // https://drive.google.com/file/d/FILE_ID/view?usp=sharing
+  const driveMatch = url.match(/\/file\/d\/([^/]+)/);
+  if (driveMatch && driveMatch[1]) {
+    return `https://lh3.googleusercontent.com/u/0/d/${driveMatch[1]}`;
+  }
+
+  return url;
+}
 
 export default function MembersTableClient({ members }: { members: Member[] }) {
   const [q, setQ] = useState("");
@@ -61,19 +78,38 @@ export default function MembersTableClient({ members }: { members: Member[] }) {
           <thead className="bg-neutral-50 text-neutral-600">
             <tr className="text-left">
               <th className="px-4 py-3">ID</th>
+              <th className="px-4 py-3">写真</th>
               <th className="px-4 py-3">名前</th>
               <th className="px-4 py-3">年齢</th>
               <th className="px-4 py-3">性別</th>
               <th className="px-4 py-3">職業</th>
               <th className="px-4 py-3">夢</th>
               <th className="px-4 py-3">役割</th>
-              <th className="px-4 py-3">更新</th>
+              <th className="px-4 py-3 text-right">更新</th>
             </tr>
           </thead>
           <tbody className="divide-y">
             {filtered.map((m) => (
               <tr key={m.member_id} className="hover:bg-neutral-50">
                 <td className="px-4 py-3 font-mono">{m.member_id}</td>
+                <td className="px-4 py-3">
+                  <div className="relative h-10 w-10 overflow-hidden rounded-full bg-neutral-100">
+                    {m.photo_url ? (
+                      <Image
+                        src={fixImageUrl(m.photo_url)}
+                        alt={m.name}
+                        fill
+                        className="object-cover"
+                        sizes="40px"
+                        unoptimized={!fixImageUrl(m.photo_url).includes("googleusercontent")}
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-[10px] text-neutral-400">
+                        No Img
+                      </div>
+                    )}
+                  </div>
+                </td>
                 <td className="px-4 py-3 font-medium">{m.name}</td>
                 <td className="px-4 py-3">{m.age}</td>
                 <td className="px-4 py-3">{m.gender}</td>
@@ -81,14 +117,18 @@ export default function MembersTableClient({ members }: { members: Member[] }) {
                 <td className="px-4 py-3 max-w-[420px] truncate" title={m.dream}>
                   {m.dream}
                 </td>
-                <td className="px-4 py-3">{m.role}</td>
-                <td className="px-4 py-3 text-neutral-500">{m.updated_at}</td>
+                <td className="px-4 py-3">
+                  <span className="inline-flex items-center rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-800">
+                    {m.role}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-right text-neutral-500">{m.updated_at}</td>
               </tr>
             ))}
 
             {filtered.length === 0 && (
               <tr>
-                <td className="px-4 py-6 text-neutral-500" colSpan={8}>
+                <td className="px-4 py-6 text-neutral-500 text-center" colSpan={9}>
                   検索条件に一致するメンバーがいません。
                 </td>
               </tr>
