@@ -58,13 +58,18 @@ function parseCsv<T>(csvText: string): T[] {
     .map((l) => l.trim())
     .filter((l) => l.length > 0);
 
-  if (lines.length === 0) return [];
+  const validLines = lines.filter((l) => {
+    // Google Sheets でよくある「カンマだけの空行（例: ,,,,,,）」を除外
+    return l.replace(/,/g, "").trim().length > 0;
+  });
+
+  if (validLines.length === 0) return [];
 
   // ダブルクォートがあれば除去する
-  const headers = lines[0].split(",").map((h) => h.replace(/^"|"$/g, "").trim());
+  const headers = validLines[0].split(",").map((h) => h.replace(/^"|"$/g, "").trim());
   console.log("Extracted Headers:", headers);
 
-  return lines.slice(1).map((line) => {
+  return validLines.slice(1).map((line) => {
     // 簡易実装を引き継ぐ（値のダブルクォートも除去）
     const cols = line.split(",").map((c) => c.replace(/^"|"$/g, "").trim());
     const row: Record<string, string> = {};
