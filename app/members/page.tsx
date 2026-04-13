@@ -2,30 +2,9 @@ import MembersTableClient from "@/components/MembersTableClient";
 
 export const dynamic = "force-dynamic";
 
-type Member = {
-  member_id: string;
-  parent_id: string;
-  name: string;
-  age: string;
-  gender: string;
-  photo_url: string;
-  job: string;
-  dream: string;
-  role: string;
-  updated_at: string;
-};
+  
 
-async function getMembers(): Promise<Member[]> {
-  const baseUrl =
-    process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000";
-
-  const res = await fetch(`${baseUrl}/api/members`, { cache: "no-store" });
-  if (!res.ok) return [];
-  const json = (await res.json()) as { data: Member[] };
-  return json.data ?? [];
-}
+import { getMembers } from "@/lib/csv";
 
 export default async function MembersPage() {
   const members = await getMembers();
