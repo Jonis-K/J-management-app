@@ -39,19 +39,22 @@ export type GraphEdge = {
 };
 
 function parseCsv<T>(csvText: string): T[] {
-  const lines = csvText
+  // BOMがあれば削除
+  const cleanCsvText = csvText.replace(/^\uFEFF/, "");
+  
+  const lines = cleanCsvText
     .split(/\r?\n/)
     .map((l) => l.trim())
     .filter((l) => l.length > 0);
 
   if (lines.length === 0) return [];
 
-  const headers = lines[0].split(",").map((h) => h.trim());
+  // ダブルクォートがあれば除去する
+  const headers = lines[0].split(",").map((h) => h.replace(/^"|"$/g, "").trim());
 
   return lines.slice(1).map((line) => {
-    // CSV内にカンマが含まれる場合を考慮するなら本来は専用ライブラリが望ましいですが、
-    // 現在の簡易実装を踏襲します（必要に応じて拡張可能）。
-    const cols = line.split(",").map((c) => c.trim());
+    // 簡易実装を引き継ぐ（値のダブルクォートも除去）
+    const cols = line.split(",").map((c) => c.replace(/^"|"$/g, "").trim());
     const row: Record<string, string> = {};
     headers.forEach((h, i) => (row[h] = cols[i] ?? ""));
     return row as unknown as T;
