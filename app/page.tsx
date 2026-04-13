@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import PageHeader from "@/components/PageHeader";
 import StatCard from "@/components/StatCard";
 import { getMembers, getGoals, getLinks } from "@/lib/csv";
