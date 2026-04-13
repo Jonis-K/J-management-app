@@ -3,6 +3,13 @@ export type Member = {
   member_id: string;
   parent_id: string;
   name: string;
+  age?: string;
+  gender?: string;
+  photo_url?: string;
+  job?: string;
+  dream?: string;
+  role?: string;
+  updated_at?: string;
 };
 
 export type Goal = {
