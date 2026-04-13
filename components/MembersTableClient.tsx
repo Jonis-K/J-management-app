@@ -3,23 +3,12 @@
 import { useMemo, useState } from "react";
 import Image from "next/image";
 
-type Member = {
-  member_id: string;
-  parent_id: string;
-  name: string;
-  age: string;
-  gender: string;
-  photo_url: string;
-  job: string;
-  dream: string;
-  role: string;
-  updated_at: string;
-};
+import { Member } from "@/lib/csv";
 
 /**
  * Google Driveの共有リンク等を直接表示可能なURLに変換する
  */
-function fixImageUrl(url: string): string {
+function fixImageUrl(url?: string): string {
   const u = (url ?? "").trim();
   if (!u) return "";
 
@@ -54,7 +43,7 @@ export default function MembersTableClient({ members }: { members: Member[] }) {
     if (!query) return members;
 
     return members.filter((m) => {
-      const haystack = `${m.name} ${m.job} ${m.dream}`.toLowerCase();
+      const haystack = `${m.name ?? ""} ${m.job ?? ""} ${m.dream ?? ""}`.toLowerCase();
       return haystack.includes(query);
     });
   }, [members, q]);
