@@ -46,6 +46,10 @@ export type GraphEdge = {
 };
 
 function parseCsv<T>(csvText: string): T[] {
+  // デバッグ用：取得した生CSVの一部とヘッダーなどをコンソール出力
+  console.log("=== CSV Parse Debug ===");
+  console.log("Raw CSV Header & First Row:", csvText.split(/\r?\n/).slice(0, 2));
+
   // BOMがあれば削除
   const cleanCsvText = csvText.replace(/^\uFEFF/, "");
   
@@ -58,30 +62,47 @@ function parseCsv<T>(csvText: string): T[] {
 
   // ダブルクォートがあれば除去する
   const headers = lines[0].split(",").map((h) => h.replace(/^"|"$/g, "").trim());
+  console.log("Extracted Headers:", headers);
 
   return lines.slice(1).map((line) => {
     // 簡易実装を引き継ぐ（値のダブルクォートも除去）
     const cols = line.split(",").map((c) => c.replace(/^"|"$/g, "").trim());
     const row: Record<string, string> = {};
     headers.forEach((h, i) => (row[h] = cols[i] ?? ""));
+    
+    // シート上のカラム名が 'id' の場合に、コード側の 'member_id' としても利用できるように補完
+    if (row.id && !row.member_id) {
+      row.member_id = row.id;
+    }
+
     return row as unknown as T;
   });
 }
 
 async function fetchAndParse<T>(envKey: string): Promise<T[]> {
   const url = process.env[envKey];
-  if (!url) return [];
+  if (!url) {
+    console.error(`[CSV Fetch] ${envKey} is not set in environment variables.`);
+    return [];
+  }
 
   try {
+    console.log(`\n[CSV Fetch] Fetching from ${envKey}...`);
     const res = await fetch(url, { cache: "no-store" });
+    console.log(`[CSV Fetch] Response status: ${res.status} ${res.statusText}`);
+    
     if (!res.ok) {
-      console.error(`Failed to fetch CSV from ${envKey}: ${res.statusText}`);
+      console.error(`[CSV Fetch Error] Failed to fetch CSV from ${envKey}: ${res.status} ${res.statusText}`);
       return [];
     }
+    
     const csv = await res.text();
+    console.log(`[CSV Fetch] Data received, length: ${csv.length} characters`);
+    console.log(`[CSV Fetch] Preview:`, csv.slice(0, 150).replace(/\r?\n/g, "\\n"));
+
     return parseCsv<T>(csv);
   } catch (error) {
-    console.error(`Error fetching CSV from ${envKey}:`, error);
+    console.error(`[CSV Fetch Exception] Error fetching CSV from ${envKey}:`, error);
     return [];
   }
 }
