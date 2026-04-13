@@ -98,7 +98,7 @@ async function fetchAndParse<T>(envKey: string): Promise<T[]> {
     
     const csv = await res.text();
     console.log(`[CSV Fetch] Data received, length: ${csv.length} characters`);
-    console.log(`[CSV Fetch] Preview:`, csv.slice(0, 150).replace(/\r?\n/g, "\\n"));
+    console.log("MEMBERS_RAW_DATA:", csv.slice(0, 100));
 
     return parseCsv<T>(csv);
   } catch (error) {
