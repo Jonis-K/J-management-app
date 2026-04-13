@@ -1,47 +1,6 @@
 export const dynamic = "force-dynamic";
 
-type LinkItem = {
-  link_id: string;
-  type: string; // memo | qa | attend | other
-  category: string;
-  title: string;
-  url: string;
-  sort_order: string;
-  updated_at: string;
-};
-
-function parseCsv(csvText: string): LinkItem[] {
-  const lines = csvText
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter((l) => l.length > 0);
-
-  if (lines.length === 0) return [];
-
-  const headers = lines[0].split(",").map((h) => h.trim());
-
-  return lines.slice(1).map((line) => {
-    const cols = line.split(",").map((c) => c.trim());
-    const row: Record<string, string> = {};
-    headers.forEach((h, i) => (row[h] = cols[i] ?? ""));
-    return row as unknown as LinkItem;
-  });
-}
-
-async function getLinks(): Promise<LinkItem[]> {
-  const url = process.env.SHEETS_LINKS_CSV_URL;
-  if (!url) return [];
-
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) return [];
-
-  const csv = await res.text();
-  const data = parseCsv(csv);
-
-  // sort_order を数値として昇順
-  data.sort((a, b) => (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0));
-  return data;
-}
+import { getLinks } from "@/lib/csv";
 
 function badgeLabel(type: string) {
   switch (type) {

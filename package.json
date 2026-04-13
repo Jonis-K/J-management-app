@@ -23,5 +23,8 @@
     "eslint-config-next": "latest",
     "tailwindcss": "latest",
     "typescript": "latest"
+  },
+  "overrides": {
+    "eslint-visitor-keys": "4.2.0"
   }
 }

@@ -1,45 +1,6 @@
 export const dynamic = "force-dynamic";
 
-type Goal = {
-  goal_id: string;
-  member_id: string;
-  deadline: string;
-  title: string;
-  plan_month_1: string;
-  plan_month_2: string;
-  plan_month_3: string;
-  status: string;
-  updated_at: string;
-};
-
-function parseCsv(csvText: string): Goal[] {
-  const lines = csvText
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter((l) => l.length > 0);
-
-  if (lines.length === 0) return [];
-
-  const headers = lines[0].split(",").map((h) => h.trim());
-
-  return lines.slice(1).map((line) => {
-    const cols = line.split(",").map((c) => c.trim());
-    const row: Record<string, string> = {};
-    headers.forEach((h, i) => (row[h] = cols[i] ?? ""));
-    return row as unknown as Goal;
-  });
-}
-
-async function getGoals(): Promise<Goal[]> {
-  const url = process.env.SHEETS_GOALS_CSV_URL;
-  if (!url) return [];
-
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) return [];
-
-  const csv = await res.text();
-  return parseCsv(csv);
-}
+import { getGoals } from "@/lib/csv";
 
 export default async function GoalsPage() {
   const goals = await getGoals();

@@ -1,43 +1,6 @@
 export const dynamic = "force-dynamic";
 
-type Member = {
-  member_id: string;
-  parent_id: string;
-  name: string;
-};
-
-function parseCsv(csvText: string): Member[] {
-  const lines = csvText
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter((l) => l.length > 0);
-
-  if (lines.length === 0) return [];
-
-  const headers = lines[0].split(",").map((h) => h.trim());
-
-  return lines.slice(1).map((line) => {
-    const cols = line.split(",").map((c) => c.trim());
-    const row: Record<string, string> = {};
-    headers.forEach((h, i) => (row[h] = cols[i] ?? ""));
-    return {
-      member_id: row.member_id,
-      parent_id: row.parent_id,
-      name: row.name,
-    };
-  });
-}
-
-async function getMembers(): Promise<Member[]> {
-  const url = process.env.SHEETS_MEMBERS_CSV_URL;
-  if (!url) return [];
-
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) return [];
-
-  const csv = await res.text();
-  return parseCsv(csv);
-}
+import { getMembers, Member } from "@/lib/csv";
 
 type Node = Member & { children: Node[] };
 
