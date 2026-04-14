@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { navItems } from "./MobileNav";
+import { navItems } from "./BottomNav";
 import { Zap } from "lucide-react";
 
 export default function Sidebar() {
