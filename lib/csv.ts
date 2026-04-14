@@ -52,28 +52,67 @@ function parseCsv<T>(csvText: string): T[] {
 
   // BOMがあれば削除
   const cleanCsvText = csvText.replace(/^\uFEFF/, "");
-  
-  const lines = cleanCsvText
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter((l) => l.length > 0);
 
-  const validLines = lines.filter((l) => {
-    // Google Sheets でよくある「カンマだけの空行（例: ,,,,,,）」を除外
-    return l.replace(/,/g, "").trim().length > 0;
-  });
+  // 文字単位で解析するステートマシン（カンマや改行を含むセル対策）
+  const rows: string[][] = [];
+  let currentRow: string[] = [];
+  let currentVal = '';
+  let inQuotes = false;
 
-  if (validLines.length === 0) return [];
+  for (let i = 0; i < cleanCsvText.length; i++) {
+    const char = cleanCsvText[i];
+    const nextChar = cleanCsvText[i + 1];
 
-  // ダブルクォートがあれば除去する
-  const headers = validLines[0].split(",").map((h) => h.replace(/^"|"$/g, "").trim());
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        currentVal += '"'; // エスケープされたダブルクォート
+        i++; // 次の文字をスキップ
+      } else {
+        inQuotes = !inQuotes; // クォート状態のトグル
+      }
+    } else if (char === ',' && !inQuotes) {
+      // セルの区切り
+      currentRow.push(currentVal.trim());
+      currentVal = '';
+    } else if ((char === '\n' || char === '\r') && !inQuotes) {
+      // 行の区切り
+      if (char === '\r' && nextChar === '\n') {
+        i++; // \r\n の場合は \n をスキップ
+      }
+      currentRow.push(currentVal.trim());
+      
+      // カンマだけの空行や完全な空行でなければ追加
+      if (currentRow.some((val) => val !== "")) {
+        rows.push(currentRow);
+      }
+      currentRow = [];
+      currentVal = '';
+    } else {
+      currentVal += char;
+    }
+  }
+
+  // 最後の行の処理
+  if (currentVal || currentRow.length > 0) {
+    currentRow.push(currentVal.trim());
+    if (currentRow.some((val) => val !== "")) {
+      rows.push(currentRow);
+    }
+  }
+
+  if (rows.length === 0) return [];
+
+  // 1行目をヘッダーとする（先頭・末尾のクォートはステートマシンで処理済みだが念のため）
+  const headers = rows[0].map((h) => h.replace(/^"|"$/g, "").trim());
   console.log("Extracted Headers:", headers);
 
-  return validLines.slice(1).map((line) => {
-    // 簡易実装を引き継ぐ（値のダブルクォートも除去）
-    const cols = line.split(",").map((c) => c.replace(/^"|"$/g, "").trim());
+  return rows.slice(1).map((cols) => {
     const row: Record<string, string> = {};
-    headers.forEach((h, i) => (row[h] = cols[i] ?? ""));
+    headers.forEach((h, i) => {
+      // 値の先頭・末尾のクォートを念のため除去
+      const rawVal = cols[i] ?? "";
+      row[h] = rawVal.replace(/^"|"$/g, "").trim();
+    });
     
     // シート上のカラム名が 'id' の場合に、コード側の 'member_id' としても利用できるように補完
     if (row.id && !row.member_id) {
