@@ -46,81 +46,63 @@ export type GraphEdge = {
 };
 
 function parseCsv<T>(csvText: string): T[] {
-  // デバッグ用：取得した生CSVの一部とヘッダーなどをコンソール出力
   console.log("=== CSV Parse Debug ===");
-  console.log("Raw CSV Header & First Row:", csvText.split(/\r?\n/).slice(0, 2));
-
-  // BOMがあれば削除
+  
+  // BOMの削除
   const cleanCsvText = csvText.replace(/^\uFEFF/, "");
+  
+  // 【修正ポイント1】カンマや改行を含むデータに対応するため、単純な split("\n") ではなく
+  // 正規表現を使用して、ダブルクォートで囲まれた中身を保護しつつ行を分割します。
+  const rows = cleanCsvText.match(/(".*?"|[^"\r\n]+)(?=\r?\n|$)|(?<=\r?\n|^)\r?\n/g) || [];
+  
+  // もし上記が複雑すぎる場合は、一旦行で分け、各行のパースを強化します
+  const lines = cleanCsvText.split(/\r?\n/).map(l => l.trim());
 
-  // 文字単位で解析するステートマシン（カンマや改行を含むセル対策）
-  const rows: string[][] = [];
-  let currentRow: string[] = [];
-  let currentVal = '';
-  let inQuotes = false;
+  if (lines.length === 0) return [];
 
-  for (let i = 0; i < cleanCsvText.length; i++) {
-    const char = cleanCsvText[i];
-    const nextChar = cleanCsvText[i + 1];
-
-    if (char === '"') {
-      if (inQuotes && nextChar === '"') {
-        currentVal += '"'; // エスケープされたダブルクォート
-        i++; // 次の文字をスキップ
-      } else {
-        inQuotes = !inQuotes; // クォート状態のトグル
-      }
-    } else if (char === ',' && !inQuotes) {
-      // セルの区切り
-      currentRow.push(currentVal.trim());
-      currentVal = '';
-    } else if ((char === '\n' || char === '\r') && !inQuotes) {
-      // 行の区切り
-      if (char === '\r' && nextChar === '\n') {
-        i++; // \r\n の場合は \n をスキップ
-      }
-      currentRow.push(currentVal.trim());
-      
-      // カンマだけの空行や完全な空行でなければ追加
-      if (currentRow.some((val) => val !== "")) {
-        rows.push(currentRow);
-      }
-      currentRow = [];
-      currentVal = '';
-    } else {
-      currentVal += char;
-    }
-  }
-
-  // 最後の行の処理
-  if (currentVal || currentRow.length > 0) {
-    currentRow.push(currentVal.trim());
-    if (currentRow.some((val) => val !== "")) {
-      rows.push(currentRow);
-    }
-  }
-
-  if (rows.length === 0) return [];
-
-  // 1行目をヘッダーとする（先頭・末尾のクォートはステートマシンで処理済みだが念のため）
-  const headers = rows[0].map((h) => h.replace(/^"|"$/g, "").trim());
+  // ヘッダーの取得（前後の余計な空白を完全に除去）
+  const headers = lines[0].split(",").map((h) => h.replace(/^"|"$/g, "").trim().toLowerCase());
   console.log("Extracted Headers:", headers);
 
-  return rows.slice(1).map((cols) => {
-    const row: Record<string, string> = {};
-    headers.forEach((h, i) => {
-      // 値の先頭・末尾のクォートを念のため除去
-      const rawVal = cols[i] ?? "";
-      row[h] = rawVal.replace(/^"|"$/g, "").trim();
-    });
-    
-    // シート上のカラム名が 'id' の場合に、コード側の 'member_id' としても利用できるように補完
-    if (row.id && !row.member_id) {
-      row.member_id = row.id;
-    }
+  const result: T[] = [];
 
-    return row as unknown as T;
-  });
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i];
+    // 【修正ポイント2】カンマだけの行や、実質空の行をより厳格に除外
+    if (!line || line.replace(/,/g, "").trim().length === 0) continue;
+
+    // 【修正ポイント3】値に含まれるカンマに対応するための正規表現パース
+    // CSVの1行を、カンマで分割するが、ダブルクォート内のカンマは無視する
+    const cols: string[] = [];
+    let start = 0;
+    let inQuotes = false;
+    for (let c = 0; c < line.length; c++) {
+      if (line[c] === '"') inQuotes = !inQuotes;
+      if (line[c] === ',' && !inQuotes) {
+        cols.push(line.substring(start, c));
+        start = c + 1;
+      }
+    }
+    cols.push(line.substring(start));
+
+    const row: Record<string, any> = {};
+    headers.forEach((h, index) => {
+      let val = (cols[index] ?? "").trim();
+      val = val.replace(/^"|"$/g, ""); // 前後のダブルクォートを除去
+      row[h] = val;
+    });
+
+    // IDの補完ロジック
+    if (row.id && !row.member_id) row.member_id = row.id;
+    
+    // member_id すら空の行はデータとして不完全なので除外
+    if (row.member_id || row.name) {
+      result.push(row as unknown as T);
+    }
+  }
+
+  console.log(`Parsed Result: ${result.length} items found.`);
+  return result;
 }
 
 async function fetchAndParse<T>(envKey: string): Promise<T[]> {
