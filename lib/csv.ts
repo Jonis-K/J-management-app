@@ -103,27 +103,37 @@ function parseCsv<T>(csvText: string): T[] {
     }
   }
 
-  if (rows.length === 0) return [];
-
-  // 1行目をヘッダーとする
-  const headers = rows[0].map((h) => h.replace(/^"|"$/g, "").trim());
+  // 1行目をヘッダーとする（トリム、クォート除去、大文字小文字の統一）
+  const headers = rows[0].map((h) => h.replace(/^"|"$/g, "").trim().toLowerCase());
   console.log("Extracted Headers:", headers);
 
-  return rows.slice(1).map((cols) => {
+  const parsedData: T[] = [];
+
+  rows.slice(1).forEach((cols) => {
     const row: Record<string, string> = {};
     headers.forEach((h, i) => {
-      // 値の先頭・末尾のクォートを除去
+      // 値の先頭・末尾のクォートを除去し、自動的に前後の空白も取り除く
       const rawVal = cols[i] ?? "";
       row[h] = rawVal.replace(/^"|"$/g, "").trim();
     });
     
-    // シート上のカラム名が 'id' の場合に、コード側の 'member_id' や 'goal_id' 等としても利用できるように補完
+    // シート上のカラム名が 'id' の場合に補完
     if (row.id && !row.member_id) {
       row.member_id = row.id;
     }
 
-    return row as unknown as T;
+    // --- データのクリーニングと未入力行のスキップ ---
+    // members用: 名前が空欄の行はスキップ
+    if (headers.includes("name") && !row.name) return;
+    // goals / links用: タイトルが空欄の行をスキップ（追加の安全性）
+    if (headers.includes("title") && !row.title) return;
+    // member_id カラムがあるのに空欄の行はスキップ
+    if (headers.includes("member_id") && !row.member_id) return;
+
+    parsedData.push(row as unknown as T);
   });
+
+  return parsedData;
 }
 
 async function fetchAndParse<T>(envKey: string): Promise<T[]> {
