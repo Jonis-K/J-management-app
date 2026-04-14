@@ -137,10 +137,25 @@ function parseCsv<T>(csvText: string): T[] {
 }
 
 async function fetchAndParse<T>(envKey: string): Promise<T[]> {
-  const url = process.env[envKey];
+  let url = process.env[envKey];
   if (!url) {
     console.error(`[CSV Fetch] ${envKey} is not set in environment variables.`);
     return [];
+  }
+
+  // --- 安全装置 ---
+  // GitHubなどへの露出を懸念して、わざと「編集画面のURL（/edit）」を環境変数に入れた場合や
+  // 単なる設定ミスだった場合でも、プログラム側で自動的に「CSVエクスポート専用の直リンク」に変換します。
+  if (url.includes("/edit")) {
+    const docIdMatch = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
+    const gidMatch = url.match(/gid=([0-9]+)/);
+    
+    if (docIdMatch) {
+      const docId = docIdMatch[1];
+      const gid = gidMatch ? gidMatch[1] : "0";
+      url = `https://docs.google.com/spreadsheets/d/${docId}/export?format=csv&gid=${gid}`;
+      console.log(`[CSV Fetch] Auto-converted /edit URL to export URL for ${envKey}.`);
+    }
   }
 
   try {
