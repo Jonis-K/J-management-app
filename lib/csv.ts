@@ -51,7 +51,12 @@ function parseCsv<T>(csvText: string): T[] {
   // BOMがあれば削除
   const cleanCsvText = csvText.replace(/^\uFEFF/, "");
 
-  // 文字単位で解析するステートマシン（カンマや改行を含むセル対策）
+  // ヘッダー行を解析して区切り文字(カンマかタブか)を自動判定する
+  const firstLineEnd = cleanCsvText.indexOf('\n');
+  const firstLine = cleanCsvText.slice(0, firstLineEnd > -1 ? firstLineEnd : cleanCsvText.length);
+  const delimiter = (!firstLine.includes(',') && firstLine.includes('\t')) ? '\t' : ',';
+
+  // 文字単位で解析するステートマシン（カンマ/タブや改行を含むセル対策）
   const rows: string[][] = [];
   let currentRow: string[] = [];
   let currentVal = '';
@@ -68,8 +73,8 @@ function parseCsv<T>(csvText: string): T[] {
       } else {
         inQuotes = !inQuotes; // クォート状態のトグル
       }
-    } else if (char === ',' && !inQuotes) {
-      // セルの区切り
+    } else if (char === delimiter && !inQuotes) {
+      // セルの区切り（自動判定された , または \t ）
       currentRow.push(currentVal.trim());
       currentVal = '';
     } else if ((char === '\n' || char === '\r') && !inQuotes) {
@@ -79,7 +84,7 @@ function parseCsv<T>(csvText: string): T[] {
       }
       currentRow.push(currentVal.trim());
       
-      // カンマだけの空行や完全な空行でなければ追加
+      // 中身が実質的に空の行（余分についてきた行）でなければ追加
       if (currentRow.some((val) => val !== "")) {
         rows.push(currentRow);
       }
