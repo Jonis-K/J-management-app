@@ -1,77 +1,47 @@
 export const dynamic = "force-dynamic";
 
-import { getMembers, Member } from "@/lib/csv";
-
-type Node = Member & { children: Node[] };
-
-function buildTree(members: Member[]): Node[] {
-  const map = new Map<string, Node>();
-
-  // 初期ノード生成
-  members.forEach((m) => {
-    map.set(m.member_id, { ...m, children: [] });
-  });
-
-  const roots: Node[] = [];
-
-  members.forEach((m) => {
-    const node = map.get(m.member_id);
-    if (!node) return;
-
-    if (!m.parent_id || !map.has(m.parent_id)) {
-      // 親がいない or 不正ID → ルート扱い
-      roots.push(node);
-    } else {
-      const parent = map.get(m.parent_id);
-      parent?.children.push(node);
-    }
-  });
-
-  return roots;
-}
-
-function Tree({ nodes }: { nodes: Node[] }) {
-  if (!nodes.length) return null;
-
-  return (
-    <ul className="pl-4 border-l space-y-2">
-      {nodes.map((n) => (
-        <li key={n.member_id}>
-          <div className="text-sm">
-            <span className="font-medium">{n.name}</span>
-            <span className="text-xs text-neutral-500 ml-2">
-              ({n.member_id})
-            </span>
-          </div>
-          {n.children.length > 0 && <Tree nodes={n.children} />}
-        </li>
-      ))}
-    </ul>
-  );
-}
+import { getMembers, buildGraphFromMembers } from "@/lib/csv";
+import OrgChartClient from "@/components/OrgChartClient";
+import PageHeader from "@/components/PageHeader";
+import { Edge, Node } from "@xyflow/react";
 
 export default async function OrgPage() {
   const members = await getMembers();
-  const tree = buildTree(members);
+  const { nodes: baseNodes, edges: baseEdges } = buildGraphFromMembers(members);
+
+  // 汎用グラフノードをReact Flowのカスタムノード形式に変換
+  const initialNodes: Node[] = baseNodes.map((n) => ({
+    id: n.id,
+    type: "custom",
+    position: { x: 0, y: 0 }, // 初期位置（表示時にdagreが自動計算）
+    data: n.data,
+  }));
+
+  const initialEdges: Edge[] = baseEdges.map((e) => ({
+    id: e.id,
+    source: e.source,
+    target: e.target,
+    type: "smoothstep",
+    animated: true,
+    style: { stroke: "#0ea5e9", strokeWidth: 2 },
+  }));
 
   return (
-    <main className="p-6 space-y-4">
-      <div>
-        <h1 className="text-2xl font-semibold">組織図（簡易）</h1>
+    <main className="p-4 sm:p-6 space-y-4 max-w-[1600px] mx-auto pb-20">
+      <PageHeader title="組織図" />
+      <div className="mb-4">
         <p className="text-sm text-neutral-500">
-          parent_id に基づいてツリー生成しています。
+          メンバーの階層構造を可視化しています。ドラッグでの移動やホイールでのズームが可能です。
         </p>
       </div>
 
-      <div className="rounded-lg border bg-white p-4">
-        {tree.length > 0 ? (
-          <Tree nodes={tree} />
-        ) : (
-          <div className="text-sm text-neutral-500">
-            メンバーデータがありません。
-          </div>
-        )}
-      </div>
+      {initialNodes.length > 0 ? (
+        <OrgChartClient initialNodes={initialNodes} initialEdges={initialEdges} />
+      ) : (
+        <div className="rounded-2xl border-2 border-dashed border-sky-200 bg-sky-50 p-12 text-center text-sky-600/80 font-medium">
+          メンバーデータがありません。
+        </div>
+      )}
     </main>
   );
 }
