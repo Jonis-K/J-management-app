@@ -68,37 +68,60 @@ export default async function LinksPage() {
 
             <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {groupedLinks[category].map((l) => (
-                <a
-                  key={l.link_id}
-                  href={l.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="group relative bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md hover:border-sky-200 transition-all active:scale-[0.98] flex flex-col justify-between h-full"
-                >
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="inline-flex items-center rounded-lg bg-slate-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 group-hover:bg-sky-50 group-hover:text-sky-600 transition-colors">
-                        {badgeLabel(l.type)}
+                l.url ? (
+                  <a
+                    key={l.link_id}
+                    href={l.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group relative bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md hover:border-sky-200 transition-all active:scale-[0.98] flex flex-col justify-between h-full"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="inline-flex items-center rounded-lg bg-slate-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 group-hover:bg-sky-50 group-hover:text-sky-600 transition-colors">
+                          {badgeLabel(l.type)}
+                        </span>
+                        <div className="text-[10px] font-mono text-slate-300">
+                          #{l.sort_order}
+                        </div>
+                      </div>
+
+                      <h3 className="font-bold text-slate-800 leading-snug group-hover:text-sky-600 transition-colors line-clamp-2 mb-2">
+                        {l.title}
+                      </h3>
+                    </div>
+
+                    <div className="flex items-center justify-between mt-4">
+                      <span className="text-[10px] text-slate-400 font-medium">
+                        更新: {l.updated_at || "不明"}
                       </span>
-                      <div className="text-[10px] font-mono text-slate-300">
-                        #{l.sort_order}
+                      <div className="rounded-full bg-slate-50 p-1.5 text-slate-400 group-hover:bg-sky-500 group-hover:text-white transition-all">
+                        <ExternalLink className="w-3.5 h-3.5" />
                       </div>
                     </div>
-
-                    <h3 className="font-bold text-slate-800 leading-snug group-hover:text-sky-600 transition-colors line-clamp-2 mb-2">
-                      {l.title}
-                    </h3>
-                  </div>
-
-                  <div className="flex items-center justify-between mt-4">
-                    <span className="text-[10px] text-slate-400 font-medium">
-                      更新: {l.updated_at || "不明"}
-                    </span>
-                    <div className="rounded-full bg-slate-50 p-1.5 text-slate-400 group-hover:bg-sky-500 group-hover:text-white transition-all">
-                      <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                ) : (
+                  <div
+                    key={l.link_id}
+                    className="group relative bg-slate-50/50 rounded-2xl p-5 border border-slate-100 opacity-60 grayscale cursor-not-allowed flex flex-col justify-between h-full select-none"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="inline-flex items-center rounded-lg bg-slate-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                          URL無効
+                        </span>
+                      </div>
+                      <h3 className="font-bold text-slate-400 leading-snug line-clamp-2 mb-2">
+                        {l.title}
+                      </h3>
+                    </div>
+                    <div className="mt-4">
+                      <span className="text-[10px] text-slate-300 font-medium italic">
+                        ※有効なURLが設定されていません
+                      </span>
                     </div>
                   </div>
-                </a>
+                )
               ))}
             </div>
           </section>

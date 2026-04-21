@@ -189,7 +189,27 @@ export async function getGoals(): Promise<Goal[]> {
 
 export async function getLinks(): Promise<LinkItem[]> {
   const data = await fetchAndParse<LinkItem>("SHEETS_LINKS_CSV_URL");
-  return data.sort((a, b) => (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0));
+  
+  // URLバリデーションとデバッグ出力
+  const processedData = data.map((l) => {
+    const rawUrl = l.url?.trim() || "";
+    // http(s):// から始まらないURLは空文字として扱い、404エラーを防ぐ
+    const isValid = rawUrl.startsWith("http://") || rawUrl.startsWith("https://");
+    const safeUrl = isValid ? rawUrl : "";
+
+    if (!isValid && rawUrl !== "") {
+      console.warn(`\x1b[33m[CSV Link Debug] Invalid URL found for "${l.title}": "${rawUrl}" -> treating as empty.\x1b[0m`);
+    } else if (isValid) {
+      console.log(`[CSV Link Debug] Parsed URL for "${l.title}": ${safeUrl}`);
+    }
+
+    return {
+      ...l,
+      url: safeUrl
+    };
+  });
+
+  return processedData.sort((a, b) => (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0));
 }
 
 /**

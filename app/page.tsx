@@ -28,43 +28,51 @@ export default async function DashboardPage() {
       {/* 本日の議事録（特設スロット） */}
       {latestMeeting && (
         <section className="animate-in fade-in slide-in-from-top-4 duration-700">
-          <a
-            href={latestMeeting.url}
-            target="_blank"
-            rel="noreferrer"
-            className="relative overflow-hidden group block w-full rounded-3xl bg-gradient-to-br from-sky-500 to-indigo-600 p-1 shadow-lg hover:shadow-xl transition-all active:scale-[0.99]"
-          >
-            <div className="relative rounded-[22px] bg-white/90 backdrop-blur-sm p-6 sm:p-8 flex items-center justify-between overflow-hidden">
-              {/* 背景の装飾的なアイコン */}
-              <ClipboardList className="absolute -right-4 -bottom-4 w-32 h-32 text-sky-500/10 -rotate-12 transition-transform group-hover:scale-110 group-hover:rotate-0 duration-500" />
-              
-              <div className="flex items-center gap-4 sm:gap-6">
-                <div className="rounded-2xl bg-sky-500 p-4 text-white shadow-inner group-hover:scale-110 transition-transform duration-500">
-                  <ClipboardList className="w-8 h-8 sm:w-10 sm:h-10" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-bold uppercase tracking-wider text-sky-600 bg-sky-50 px-2 py-0.5 rounded-full">
-                      最新の議事録
-                    </span>
-                    <span className="text-xs text-slate-400 font-medium">
-                      {latestMeeting.updated_at}
-                    </span>
+          {latestMeeting.url ? (
+            <a
+              href={latestMeeting.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="relative overflow-hidden group block w-full rounded-3xl bg-gradient-to-br from-sky-500 to-indigo-600 p-1 shadow-lg hover:shadow-xl transition-all active:scale-[0.99]"
+            >
+              <div className="relative rounded-[22px] bg-white/90 backdrop-blur-sm p-6 sm:p-8 flex items-center justify-between overflow-hidden">
+                <ClipboardList className="absolute -right-4 -bottom-4 w-32 h-32 text-sky-500/10 -rotate-12 transition-transform group-hover:scale-110 group-hover:rotate-0 duration-500" />
+                <div className="flex items-center gap-4 sm:gap-6">
+                  <div className="rounded-2xl bg-sky-500 p-4 text-white shadow-inner group-hover:scale-110 transition-transform duration-500">
+                    <ClipboardList className="w-8 h-8 sm:w-10 sm:h-10" />
                   </div>
-                  <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 group-hover:text-sky-600 transition-colors">
-                    {latestMeeting.title}
-                  </h2>
-                  <p className="text-sm sm:text-base text-slate-500 mt-1 font-medium italic">
-                    クリックして今日の定例会タブを開く
-                  </p>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-bold uppercase tracking-wider text-sky-600 bg-sky-50 px-2 py-0.5 rounded-full">最新の議事録</span>
+                      <span className="text-xs text-slate-400 font-medium">{latestMeeting.updated_at}</span>
+                    </div>
+                    <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 group-hover:text-sky-600 transition-colors">{latestMeeting.title}</h2>
+                    <p className="text-sm sm:text-base text-slate-500 mt-1 font-medium italic">クリックして今日の定例会タブを開く</p>
+                  </div>
+                </div>
+                <div className="hidden sm:flex items-center justify-center rounded-full bg-white shadow-md w-12 h-12 text-sky-500 group-hover:bg-sky-500 group-hover:text-white transition-all duration-300">
+                  <ChevronRight className="w-6 h-6" />
                 </div>
               </div>
-              
-              <div className="hidden sm:flex items-center justify-center rounded-full bg-white shadow-md w-12 h-12 text-sky-500 group-hover:bg-sky-500 group-hover:text-white transition-all duration-300">
-                <ChevronRight className="w-6 h-6" />
+            </a>
+          ) : (
+            <div className="relative overflow-hidden block w-full rounded-3xl bg-slate-100 p-1 select-none grayscale opacity-70">
+              <div className="relative rounded-[22px] bg-white/90 backdrop-blur-sm p-6 sm:p-8 flex items-center justify-between overflow-hidden">
+                <div className="flex items-center gap-4 sm:gap-6">
+                  <div className="rounded-2xl bg-slate-400 p-4 text-white">
+                    <ClipboardList className="w-8 h-8 sm:w-10 sm:h-10" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">URL未設定</span>
+                    </div>
+                    <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-400">{latestMeeting.title}</h2>
+                    <p className="text-sm sm:text-base text-slate-400 mt-1 font-medium italic">スプレッドシートのURLを確認してください</p>
+                  </div>
+                </div>
               </div>
             </div>
-          </a>
+          )}
         </section>
       )}
       
@@ -88,29 +96,49 @@ export default async function DashboardPage() {
         
         <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
           {recentLinks.map((l) => (
-            <a
-              key={l.link_id}
-              href={l.url}
-              target="_blank"
-              rel="noreferrer"
-              className="group flex flex-col justify-between rounded-2xl border border-sky-100 bg-white p-5 shadow-sm hover:shadow-md hover:border-sky-300 transition-all active:scale-[0.98]"
-            >
-              <div className="flex justify-between items-start mb-4">
-                <div className="rounded-xl bg-sky-50 p-2.5 text-sky-600 group-hover:bg-sky-500 group-hover:text-white transition-colors">
-                  <ExternalLink className="w-5 h-5" />
+            l.url ? (
+              <a
+                key={l.link_id}
+                href={l.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex flex-col justify-between rounded-2xl border border-sky-100 bg-white p-5 shadow-sm hover:shadow-md hover:border-sky-300 transition-all active:scale-[0.98]"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <div className="rounded-xl bg-sky-50 p-2.5 text-sky-600 group-hover:bg-sky-500 group-hover:text-white transition-colors">
+                    <ExternalLink className="w-5 h-5" />
+                  </div>
+                  <span className="inline-flex items-center rounded-full bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-700">
+                    {l.type || 'リンク'}
+                  </span>
                 </div>
-                <span className="inline-flex items-center rounded-full bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-700">
-                  {l.type || 'リンク'}
-                </span>
+                
+                <div>
+                  <h3 className="font-bold text-lg text-slate-800 group-hover:text-sky-600 transition-colors line-clamp-1">
+                    {l.title}
+                  </h3>
+                  <p className="mt-1 text-sm text-slate-500 line-clamp-1">{l.category}</p>
+                </div>
+              </a>
+            ) : (
+              <div
+                key={l.link_id}
+                className="flex flex-col justify-between rounded-2xl border border-slate-100 bg-slate-50/50 p-5 opacity-60 grayscale cursor-not-allowed"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <div className="rounded-xl bg-slate-100 p-2.5 text-slate-400">
+                    <ExternalLink className="w-5 h-5" />
+                  </div>
+                  <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-400">
+                    URL無効
+                  </span>
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg text-slate-400 line-clamp-1">{l.title}</h3>
+                  <p className="mt-1 text-xs text-slate-400 line-clamp-1">{l.category}</p>
+                </div>
               </div>
-              
-              <div>
-                <h3 className="font-bold text-lg text-slate-800 group-hover:text-sky-600 transition-colors line-clamp-1">
-                  {l.title}
-                </h3>
-                <p className="mt-1 text-sm text-slate-500 line-clamp-1">{l.category}</p>
-              </div>
-            </a>
+            )
           ))}
           {recentLinks.length === 0 && (
             <div className="col-span-full rounded-2xl border-2 border-dashed border-sky-100 bg-sky-50/50 p-8 text-center text-sky-600/70">
