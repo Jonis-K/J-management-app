@@ -4,7 +4,7 @@ import PageHeader from "@/components/PageHeader";
 import StatCard from "@/components/StatCard";
 import { getMembers, getGoals, getLinks } from "@/lib/csv";
 import Link from "next/link";
-import { Users, Target, Link as LinkIcon, ExternalLink, ChevronRight } from "lucide-react";
+import { Users, Target, Link as LinkIcon, ExternalLink, ChevronRight, ClipboardList } from "lucide-react";
 
 export default async function DashboardPage() {
   const [members, goals, links] = await Promise.all([
@@ -13,12 +13,60 @@ export default async function DashboardPage() {
     getLinks()
   ]);
 
-  // 最新のリンク抽出（既存上から5件）
-  const recentLinks = links.slice(0, 5);
+  // 定例会リンクの抽出と最新の特定
+  const meetingLinks = links.filter(l => l.category === "定例会");
+  // getLinksでsort_order順になっているが、念のため最優先を特定
+  const latestMeeting = meetingLinks.length > 0 ? meetingLinks[0] : null;
+
+  // 最新のリンク抽出（定例会以外、上位5件）
+  const recentLinks = links.filter(l => l.category !== "定例会").slice(0, 5);
 
   return (
     <div className="space-y-8 p-4 sm:p-6 bg-slate-50 min-h-screen pb-20">
       <PageHeader title="ダッシュボード" />
+
+      {/* 本日の議事録（特設スロット） */}
+      {latestMeeting && (
+        <section className="animate-in fade-in slide-in-from-top-4 duration-700">
+          <a
+            href={latestMeeting.url}
+            target="_blank"
+            rel="noreferrer"
+            className="relative overflow-hidden group block w-full rounded-3xl bg-gradient-to-br from-sky-500 to-indigo-600 p-1 shadow-lg hover:shadow-xl transition-all active:scale-[0.99]"
+          >
+            <div className="relative rounded-[22px] bg-white/90 backdrop-blur-sm p-6 sm:p-8 flex items-center justify-between overflow-hidden">
+              {/* 背景の装飾的なアイコン */}
+              <ClipboardList className="absolute -right-4 -bottom-4 w-32 h-32 text-sky-500/10 -rotate-12 transition-transform group-hover:scale-110 group-hover:rotate-0 duration-500" />
+              
+              <div className="flex items-center gap-4 sm:gap-6">
+                <div className="rounded-2xl bg-sky-500 p-4 text-white shadow-inner group-hover:scale-110 transition-transform duration-500">
+                  <ClipboardList className="w-8 h-8 sm:w-10 sm:h-10" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xs font-bold uppercase tracking-wider text-sky-600 bg-sky-50 px-2 py-0.5 rounded-full">
+                      最新の議事録
+                    </span>
+                    <span className="text-xs text-slate-400 font-medium">
+                      {latestMeeting.updated_at}
+                    </span>
+                  </div>
+                  <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 group-hover:text-sky-600 transition-colors">
+                    {latestMeeting.title}
+                  </h2>
+                  <p className="text-sm sm:text-base text-slate-500 mt-1 font-medium italic">
+                    クリックして今日の定例会タブを開く
+                  </p>
+                </div>
+              </div>
+              
+              <div className="hidden sm:flex items-center justify-center rounded-full bg-white shadow-md w-12 h-12 text-sky-500 group-hover:bg-sky-500 group-hover:text-white transition-all duration-300">
+                <ChevronRight className="w-6 h-6" />
+              </div>
+            </div>
+          </a>
+        </section>
+      )}
       
       {/* 統計情報: 1~3カラムレスポンシブ配置 */}
       <section>
@@ -32,7 +80,7 @@ export default async function DashboardPage() {
       {/* クイックリンク・タイル */}
       <section className="mt-8">
         <div className="flex items-center justify-between mb-4 px-1">
-          <h2 className="text-lg font-bold text-sky-950">クイックアクセス</h2>
+          <h2 className="text-lg font-bold text-sky-950">最近の共有リンク</h2>
           <Link href="/links" className="flex items-center text-sm font-medium text-sky-600 hover:text-sky-800 transition-colors">
             すべて見る <ChevronRight className="w-4 h-4 ml-0.5" />
           </Link>
