@@ -19,6 +19,7 @@ pnpm-debug.log*
 # Environment variables (secrets)
 .env
 .env.*
+!.env.example
 
 # Build / typecheck artifacts
 *.tsbuildinfo
