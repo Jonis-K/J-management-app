@@ -1,7 +1,7 @@
 // lib/csv.ts
 export type Member = {
   member_id: string;
-  parent_id: string;
+  parent_id: string; // 紹介者のmember_id
   name: string;
   age?: string;
   gender?: string;
@@ -9,6 +9,7 @@ export type Member = {
   job?: string;
   dream?: string;
   role?: string;
+  position?: string; // バイナリー配置サイド: left / right（L / R / 左 / 右 も可）
   updated_at?: string;
 };
 
@@ -32,17 +33,6 @@ export type LinkItem = {
   url: string;
   sort_order: string;
   updated_at: string;
-};
-
-// React Flow等で使うためのグラフ構造の基礎
-export type GraphNode<T = unknown> = {
-  id: string;
-  data: T;
-};
-export type GraphEdge = {
-  id: string;
-  source: string;
-  target: string;
 };
 
 function parseCsv<T>(csvText: string): T[] {
@@ -138,7 +128,7 @@ function parseCsv<T>(csvText: string): T[] {
 async function fetchAndParse<T>(envKey: string): Promise<T[]> {
   let url = process.env[envKey];
   if (!url) {
-    console.error(`[CSV Fetch] ${envKey} is not set in environment variables.`);
+    console.warn(`[CSV Fetch] ${envKey} is not set in environment variables.`);
     return [];
   }
 
@@ -194,27 +184,4 @@ export async function getLinks(): Promise<LinkItem[]> {
   });
 
   return processedData.sort((a, b) => (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0));
-}
-
-/**
- * 簡易的に React Flow 等の Node/Edge 形式に変換するヘルパー関数
- */
-export function buildGraphFromMembers(members: Member[]): { nodes: GraphNode<Member>[]; edges: GraphEdge[] } {
-  const nodes = members.map((m) => ({
-    id: m.member_id,
-    data: m,
-  }));
-
-  const edges: GraphEdge[] = [];
-  members.forEach((m) => {
-    if (m.parent_id && members.find((p) => p.member_id === m.parent_id)) {
-      edges.push({
-        id: `e-${m.parent_id}-${m.member_id}`,
-        source: m.parent_id,
-        target: m.member_id,
-      });
-    }
-  });
-
-  return { nodes, edges };
 }
