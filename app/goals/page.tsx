@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { getGoals } from "@/lib/csv";
+import GoalsTableClient from "@/components/GoalsTableClient";
 
 export default async function GoalsPage() {
   const goals = await getGoals();
@@ -20,40 +21,13 @@ export default async function GoalsPage() {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border bg-white">
-        <table className="min-w-full text-sm">
-          <thead className="bg-neutral-50 text-neutral-600">
-            <tr className="text-left">
-              <th className="px-4 py-3">ID</th>
-              <th className="px-4 py-3">メンバーID</th>
-              <th className="px-4 py-3">期限</th>
-              <th className="px-4 py-3">タイトル</th>
-              <th className="px-4 py-3">ステータス</th>
-              <th className="px-4 py-3">更新</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {goals.map((g) => (
-              <tr key={g.goal_id} className="hover:bg-neutral-50">
-                <td className="px-4 py-3 font-mono">{g.goal_id}</td>
-                <td className="px-4 py-3 font-mono">{g.member_id}</td>
-                <td className="px-4 py-3">{g.deadline}</td>
-                <td className="px-4 py-3">{g.title}</td>
-                <td className="px-4 py-3">{g.status}</td>
-                <td className="px-4 py-3 text-neutral-500">{g.updated_at}</td>
-              </tr>
-            ))}
-
-            {goals.length === 0 && (
-              <tr>
-                <td className="px-4 py-6 text-neutral-500" colSpan={6}>
-                  データがありません。Sheetsの公開設定・CSV URL・ヘッダー名を確認してください。
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      {goals.length > 0 ? (
+        <GoalsTableClient goals={goals} />
+      ) : (
+        <div className="rounded-lg border bg-white px-4 py-6 text-neutral-500">
+          データがありません。Sheetsの公開設定・CSV URL・ヘッダー名を確認してください。
+        </div>
+      )}
     </main>
   );
 }

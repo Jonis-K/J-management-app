@@ -4,36 +4,7 @@ import { useMemo, useState } from "react";
 import Image from "next/image";
 
 import { Member } from "@/lib/csv";
-
-/**
- * Google Driveの共有リンク等を直接表示可能なURLに変換する
- */
-function fixImageUrl(url?: string): string {
-  const u = (url ?? "").trim();
-  if (!u) return "";
-
-  // 1) file/d/<ID> パターン
-  const fileIdMatch = u.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-  if (fileIdMatch?.[1]) {
-    return `https://drive.google.com/uc?export=view&id=${fileIdMatch[1]}`;
-  }
-
-  // 2) open?id=<ID> や uc?id=<ID> パターン
-  const idParamMatch = u.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-  if (idParamMatch?.[1] && u.includes("drive.google.com")) {
-    return `https://drive.google.com/uc?export=view&id=${idParamMatch[1]}`;
-  }
-
-  // 3) すでに uc の場合は export=view に寄せる（idが取れれば）
-  if (u.includes("drive.google.com/uc")) {
-    const id2 = u.match(/[?&]id=([a-zA-Z0-9_-]+)/)?.[1];
-    if (id2) return `https://drive.google.com/uc?export=view&id=${id2}`;
-    return u;
-  }
-
-  // 4) それ以外（直URL等）はそのまま
-  return u;
-}
+import { fixImageUrl, shouldSkipOptimization } from "@/lib/image";
 
 export default function MembersTableClient({ members }: { members: Member[] }) {
   const [q, setQ] = useState("");
@@ -97,14 +68,14 @@ export default function MembersTableClient({ members }: { members: Member[] }) {
                 <td className="px-4 py-3 font-mono">{m.member_id}</td>
                 <td className="px-4 py-3">
                   <div className="relative h-10 w-10 overflow-hidden rounded-full bg-neutral-100">
-                    {m.photo_url ? (
+                    {fixImageUrl(m.photo_url) ? (
                       <Image
                         src={fixImageUrl(m.photo_url)}
                         alt={m.name}
                         fill
                         className="object-cover"
                         sizes="40px"
-                        unoptimized={fixImageUrl(m.photo_url).includes("drive.google.com")}
+                        unoptimized={shouldSkipOptimization(fixImageUrl(m.photo_url))}
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-[10px] text-neutral-400">

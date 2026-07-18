@@ -1,7 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import { createSessionToken, SESSION_COOKIE_NAME, SESSION_DURATION_MS } from "@/lib/auth";
 
 export async function loginAction(formData: FormData) {
   const username = formData.get("username") as string;
@@ -19,14 +19,17 @@ export async function loginAction(formData: FormData) {
     return { error: "IDまたはパスワードが正しくありません。" };
   }
 
-  // 認証成功時、7日間有効なセッションCookieを発行
-  const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const token = await createSessionToken();
+  if (!token) {
+    return { error: "サーバーの認証設定（AUTH_SECRET）がされていません。" };
+  }
+
   const cookieStore = await cookies();
-  cookieStore.set("auth_session", "authenticated", {
+  cookieStore.set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    expires,
+    expires: new Date(Date.now() + SESSION_DURATION_MS),
     path: "/",
   });
 

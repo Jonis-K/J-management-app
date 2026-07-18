@@ -1,36 +1,11 @@
 import { Handle, Position } from "@xyflow/react";
 import Image from "next/image";
 import { Member } from "@/lib/csv";
-
-/**
- * Google Driveの共有リンク等を直接表示可能なURLに変換する
- */
-function fixImageUrl(url?: string): string {
-  const u = (url ?? "").trim();
-  if (!u) return "";
-
-  const fileIdMatch = u.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-  if (fileIdMatch?.[1]) {
-    return `https://drive.google.com/uc?export=view&id=${fileIdMatch[1]}`;
-  }
-
-  const idParamMatch = u.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-  if (idParamMatch?.[1] && u.includes("drive.google.com")) {
-    return `https://drive.google.com/uc?export=view&id=${idParamMatch[1]}`;
-  }
-
-  if (u.includes("drive.google.com/uc")) {
-    const id2 = u.match(/[?&]id=([a-zA-Z0-9_-]+)/)?.[1];
-    if (id2) return `https://drive.google.com/uc?export=view&id=${id2}`;
-    return u;
-  }
-
-  return u;
-}
+import { fixImageUrl, shouldSkipOptimization } from "@/lib/image";
 
 export default function CustomNode({ data }: { data: Member }) {
   const imgUrl = fixImageUrl(data.photo_url);
-  const isDriveImg = imgUrl.includes("drive.google.com");
+  const skipOptimization = shouldSkipOptimization(imgUrl);
 
   return (
     <div className="flex items-center space-x-3 rounded-2xl border border-sky-200 bg-white p-3 shadow-md min-w-[220px]">
@@ -44,7 +19,7 @@ export default function CustomNode({ data }: { data: Member }) {
             fill
             className="object-cover"
             sizes="48px"
-            unoptimized={isDriveImg}
+            unoptimized={skipOptimization}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-[10px] text-sky-400 font-bold whitespace-nowrap">

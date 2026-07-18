@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { getLinks, LinkItem } from "@/lib/csv";
-import { ClipboardList, FileText, ExternalLink, Hash, Link as LinkIcon } from "lucide-react";
+import { ClipboardList, FileText, ExternalLink, Link as LinkIcon } from "lucide-react";
 
 function badgeLabel(type: string) {
   switch (type) {

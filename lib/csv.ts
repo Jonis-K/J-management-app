@@ -35,7 +35,7 @@ export type LinkItem = {
 };
 
 // React Flow等で使うためのグラフ構造の基礎
-export type GraphNode<T = any> = {
+export type GraphNode<T = unknown> = {
   id: string;
   data: T;
 };
@@ -46,8 +46,6 @@ export type GraphEdge = {
 };
 
 function parseCsv<T>(csvText: string): T[] {
-  console.log("=== CSV Parse Debug ===");
-  
   // BOMがあれば削除
   const cleanCsvText = csvText.replace(/^\uFEFF/, "");
 
@@ -103,9 +101,10 @@ function parseCsv<T>(csvText: string): T[] {
     }
   }
 
+  if (rows.length === 0) return [];
+
   // 1行目をヘッダーとする（トリム、クォート除去、大文字小文字の統一）
   const headers = rows[0].map((h) => h.replace(/^"|"$/g, "").trim().toLowerCase());
-  console.log("Extracted Headers:", headers);
 
   const parsedData: T[] = [];
 
@@ -154,24 +153,18 @@ async function fetchAndParse<T>(envKey: string): Promise<T[]> {
       const docId = docIdMatch[1];
       const gid = gidMatch ? gidMatch[1] : "0";
       url = `https://docs.google.com/spreadsheets/d/${docId}/export?format=csv&gid=${gid}`;
-      console.log(`[CSV Fetch] Auto-converted /edit URL to export URL for ${envKey}.`);
     }
   }
 
   try {
-    console.log(`\n[CSV Fetch] Fetching from ${envKey}...`);
     const res = await fetch(url, { cache: "no-store" });
-    console.log(`[CSV Fetch] Response status: ${res.status} ${res.statusText}`);
-    
+
     if (!res.ok) {
       console.error(`[CSV Fetch Error] Failed to fetch CSV from ${envKey}: ${res.status} ${res.statusText}`);
       return [];
     }
-    
-    const csv = await res.text();
-    console.log(`[CSV Fetch] Data received, length: ${csv.length} characters`);
-    console.log("MEMBERS_RAW_DATA:", csv.slice(0, 100));
 
+    const csv = await res.text();
     return parseCsv<T>(csv);
   } catch (error) {
     console.error(`[CSV Fetch Exception] Error fetching CSV from ${envKey}:`, error);
@@ -190,22 +183,13 @@ export async function getGoals(): Promise<Goal[]> {
 export async function getLinks(): Promise<LinkItem[]> {
   const data = await fetchAndParse<LinkItem>("SHEETS_LINKS_CSV_URL");
   
-  // URLバリデーションとデバッグ出力
+  // http(s):// から始まらないURLは空文字として扱い、リンク切れを防ぐ
   const processedData = data.map((l) => {
     const rawUrl = l.url?.trim() || "";
-    // http(s):// から始まらないURLは空文字として扱い、404エラーを防ぐ
     const isValid = rawUrl.startsWith("http://") || rawUrl.startsWith("https://");
-    const safeUrl = isValid ? rawUrl : "";
-
-    if (!isValid && rawUrl !== "") {
-      console.warn(`\x1b[33m[CSV Link Debug] Invalid URL found for "${l.title}": "${rawUrl}" -> treating as empty.\x1b[0m`);
-    } else if (isValid) {
-      console.log(`[CSV Link Debug] Parsed URL for "${l.title}": ${safeUrl}`);
-    }
-
     return {
       ...l,
-      url: safeUrl
+      url: isValid ? rawUrl : ""
     };
   });
 

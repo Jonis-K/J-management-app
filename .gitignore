@@ -15,3 +15,13 @@ pnpm-debug.log*
 # Editor
 .DS_Store
 .vscode/
+
+# Environment variables (secrets)
+.env
+.env.*
+
+# Build / typecheck artifacts
+*.tsbuildinfo
+build_output.txt
+tsc_output.txt
+tsc_errors.txt

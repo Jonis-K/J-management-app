@@ -21,13 +21,13 @@ const nodeTypes = {
   custom: CustomNode,
 };
 
-const dagreGraph = new dagre.graphlib.Graph();
-dagreGraph.setDefaultEdgeLabel(() => ({}));
-
 const nodeWidth = 260; // CustomNodeのサイズにおおまかに合わせる
 const nodeHeight = 84;
 
 const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = "TB") => {
+  // 使い回すと削除済みノードが計算に残るため、レイアウトごとに新規作成する
+  const dagreGraph = new dagre.graphlib.Graph();
+  dagreGraph.setDefaultEdgeLabel(() => ({}));
   dagreGraph.setGraph({ rankdir: direction });
 
   nodes.forEach((node) => {

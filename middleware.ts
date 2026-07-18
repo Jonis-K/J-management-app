@@ -1,22 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
+import { verifySessionToken, SESSION_COOKIE_NAME } from "@/lib/auth";
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // ✅ APIやログイン画面はスキップ（無限ループやAPI機能の阻害を防ぐ）
-  if (pathname.startsWith("/api") || pathname === "/login") {
+  // ログイン画面のみ認証不要（無限リダイレクトを防ぐ）
+  if (pathname === "/login") {
     return NextResponse.next();
   }
 
-  // セッションCookieを確認
-  const session = req.cookies.get("auth_session")?.value;
+  // 署名付きセッションCookieを検証
+  const token = req.cookies.get(SESSION_COOKIE_NAME)?.value;
+  const isAuthenticated = await verifySessionToken(token);
 
-  if (session !== "authenticated") {
-    // 未認証の場合はカスタムログイン画面へリダイレクト
+  if (!isAuthenticated) {
+    // APIは個人情報を返すため、未認証にはリダイレクトではなく401を返す
+    if (pathname.startsWith("/api")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const url = req.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);

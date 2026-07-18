@@ -1,18 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-
-type Goal = {
-  goal_id: string;
-  member_id: string;
-  deadline: string;
-  title: string;
-  plan_month_1: string;
-  plan_month_2: string;
-  plan_month_3: string;
-  status: string;
-  updated_at: string;
-};
+import { Goal } from "@/lib/csv";
 
 const STATUS_OPTIONS = ["すべて", "未着手", "進行中", "完了", "保留"];
 

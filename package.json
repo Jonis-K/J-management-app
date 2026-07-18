@@ -13,20 +13,20 @@
     "@xyflow/react": "^12.10.2",
     "dagre": "^0.8.5",
     "lucide-react": "^1.8.0",
-    "next": "latest",
-    "react": "latest",
-    "react-dom": "latest"
+    "next": "^16.2.3",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "latest",
+    "@tailwindcss/postcss": "^4.2.2",
     "@types/dagre": "^0.7.54",
-    "@types/node": "latest",
-    "@types/react": "latest",
-    "@types/react-dom": "latest",
-    "eslint": "latest",
-    "eslint-config-next": "latest",
-    "tailwindcss": "latest",
-    "typescript": "latest"
+    "@types/node": "^25.6.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^16.2.3",
+    "tailwindcss": "^4.2.2",
+    "typescript": "^6.0.2"
   },
   "overrides": {
     "eslint-visitor-keys": "4.2.0"

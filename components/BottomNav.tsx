@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Users, Target, Link as LinkIcon, Network } from "lucide-react";
+import { Home, Users, Target, Link as LinkIcon, Network, Calendar } from "lucide-react";
 
 export const navItems = [
   { href: "/", label: "Home", icon: Home },
   { href: "/members", label: "Members", icon: Users },
   { href: "/goals", label: "Goals", icon: Target },
   { href: "/links", label: "Links", icon: LinkIcon },
-  { href: "/org", label: "Org", icon: Network }
+  { href: "/org", label: "Org", icon: Network },
+  { href: "/calendar", label: "Calendar", icon: Calendar }
 ];
 
 export default function BottomNav() {

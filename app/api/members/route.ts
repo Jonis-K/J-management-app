@@ -6,6 +6,7 @@ export async function GET() {
     const data = await getMembers();
     return NextResponse.json({ data });
   } catch (error) {
+    console.error("[API] /api/members failed:", error);
     return NextResponse.json(
       { error: "Failed to fetch members data" },
       { status: 500 }

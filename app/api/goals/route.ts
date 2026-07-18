@@ -6,6 +6,7 @@ export async function GET() {
     const data = await getGoals();
     return NextResponse.json({ data });
   } catch (error) {
+    console.error("[API] /api/goals failed:", error);
     return NextResponse.json(
       { error: "Failed to fetch goals data" },
       { status: 500 }
