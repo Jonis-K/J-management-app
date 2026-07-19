@@ -123,6 +123,108 @@ export function flattenTree(roots: PlacedNode[]): PlacedNode[] {
 
 export type NodePosition = { x: number; y: number };
 
+export type LegCounts = { left: number; right: number };
+
+/** 各ノードの左系列・右系列それぞれの配下人数を計算する */
+export function countLegs(roots: PlacedNode[]): Map<string, LegCounts> {
+  const counts = new Map<string, LegCounts>();
+
+  // 自分を含む配下人数を返す
+  const walk = (node: PlacedNode | null): number => {
+    if (!node) return 0;
+    const left = walk(node.left);
+    const right = walk(node.right);
+    counts.set(node.member.member_id, { left, right });
+    return left + right + 1;
+  };
+
+  roots.forEach((r) => walk(r));
+  return counts;
+}
+
+// ---- 紹介系譜ツリー（誰が誰を紹介したか。配置とは別の木構造） ----
+
+export type GenealogyNode = {
+  member: Member;
+  introducer: Member | null;
+  children: GenealogyNode[];
+  depth: number;
+};
+
+/** 紹介者(parent_id)ベースの系譜ツリーを構築する。子はシートの行順（=紹介順） */
+export function buildGenealogyTree(members: Member[]): GenealogyNode[] {
+  const nodeMap = new Map<string, GenealogyNode>();
+  const roots: GenealogyNode[] = [];
+
+  const valid = members.filter((m) => m.member_id);
+  valid.forEach((m) => {
+    nodeMap.set(m.member_id, { member: m, introducer: null, children: [], depth: 0 });
+  });
+
+  valid.forEach((m) => {
+    const node = nodeMap.get(m.member_id)!;
+    const parent = m.parent_id ? nodeMap.get(m.parent_id) : undefined;
+    if (parent && parent !== node) {
+      node.introducer = parent.member;
+      parent.children.push(node);
+    } else {
+      roots.push(node);
+    }
+  });
+
+  // depthを親から順に設定
+  const setDepth = (node: GenealogyNode, depth: number) => {
+    node.depth = depth;
+    node.children.forEach((c) => setDepth(c, depth + 1));
+  };
+  roots.forEach((r) => setDepth(r, 0));
+
+  return roots;
+}
+
+/** 系譜ツリー全ノードを配列に展開する */
+export function flattenGenealogy(roots: GenealogyNode[]): GenealogyNode[] {
+  const out: GenealogyNode[] = [];
+  const walk = (n: GenealogyNode) => {
+    out.push(n);
+    n.children.forEach(walk);
+  };
+  roots.forEach(walk);
+  return out;
+}
+
+/**
+ * 系譜ツリーのレイアウト。葉に順に列を割り当て、親は子の中央に置く定番方式。
+ */
+export function layoutGenealogyTree(
+  roots: GenealogyNode[],
+  xGap: number,
+  yGap: number
+): Map<string, NodePosition> {
+  const positions = new Map<string, NodePosition>();
+  let col = 0;
+
+  const visit = (node: GenealogyNode): number => {
+    let x: number;
+    if (node.children.length === 0) {
+      x = col * xGap;
+      col++;
+    } else {
+      const childXs = node.children.map(visit);
+      x = (childXs[0] + childXs[childXs.length - 1]) / 2;
+    }
+    positions.set(node.member.member_id, { x, y: node.depth * yGap });
+    return x;
+  };
+
+  roots.forEach((root, i) => {
+    if (i > 0) col += 1;
+    visit(root);
+  });
+
+  return positions;
+}
+
 /**
  * 中間順（in-order）走査で列番号を割り当てるバイナリーツリー定番のレイアウト。
  * 左の部分木は必ず親より左、右の部分木は必ず親より右に並ぶため視認性が高い。

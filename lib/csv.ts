@@ -32,6 +32,7 @@ export type LinkItem = {
   title: string;
   url: string;
   sort_order: string;
+  summary?: string; // 定例会メモ等の概要（シートに列を追加すると表示される）
   updated_at: string;
 };
 

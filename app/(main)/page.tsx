@@ -3,8 +3,20 @@ export const dynamic = "force-dynamic";
 import PageHeader from "@/components/PageHeader";
 import StatCard from "@/components/StatCard";
 import { getMembers, getGoals, getLinks } from "@/lib/csv";
+import { getDaysLeft, getDeadlineStatus, parseDateLoose } from "@/lib/goals";
+import Avatar from "@/components/Avatar";
 import Link from "next/link";
-import { Users, Target, Link as LinkIcon, ExternalLink, ChevronRight, ClipboardList } from "lucide-react";
+import {
+  Users,
+  Target,
+  Link as LinkIcon,
+  ExternalLink,
+  ChevronRight,
+  ClipboardList,
+  CalendarClock,
+  AlertTriangle,
+  UserPlus,
+} from "lucide-react";
 
 export default async function DashboardPage() {
   const [members, goals, links] = await Promise.all([
@@ -13,16 +25,35 @@ export default async function DashboardPage() {
     getLinks()
   ]);
 
+  const memberMap = new Map(members.map((m) => [m.member_id, m]));
+
   // 定例会リンクの抽出と最新の特定
   const meetingLinks = links.filter(l => l.category === "定例会");
-  // getLinksでsort_order順になっているが、念のため最優先を特定
   const latestMeeting = meetingLinks.length > 0 ? meetingLinks[0] : null;
 
   // 最新のリンク抽出（定例会以外、上位5件）
   const recentLinks = links.filter(l => l.category !== "定例会").slice(0, 5);
 
+  // 期限が近い目標（完了以外・期限あり・近い順に上位4件）
+  const upcomingGoals = goals
+    .filter((g) => g.status !== "完了" && getDaysLeft(g.deadline) !== null)
+    .sort((a, b) => (getDaysLeft(a.deadline) ?? 0) - (getDaysLeft(b.deadline) ?? 0))
+    .slice(0, 4);
+
+  // 新しい仲間（updated_at の新しい順に4名。30日以内ならNEWバッジ）
+  const now = new Date();
+  const recentMembers = [...members]
+    .filter((m) => parseDateLoose(m.updated_at))
+    .sort((a, b) => (b.updated_at ?? "").localeCompare(a.updated_at ?? ""))
+    .slice(0, 4)
+    .map((m) => {
+      const d = parseDateLoose(m.updated_at)!;
+      const days = Math.round((now.getTime() - d.getTime()) / (24 * 60 * 60 * 1000));
+      return { member: m, isNew: days <= 30 };
+    });
+
   return (
-    <div className="space-y-8 p-4 sm:p-6 bg-slate-50 min-h-screen pb-20">
+    <div className="space-y-8 p-4 sm:p-6 bg-slate-50 min-h-screen pb-24">
       <PageHeader title="ダッシュボード" />
 
       {/* 本日の議事録（特設スロット） */}
@@ -75,25 +106,114 @@ export default async function DashboardPage() {
           )}
         </section>
       )}
-      
+
       {/* 統計情報: 1~3カラムレスポンシブ配置 */}
       <section>
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          <StatCard label="メンバー数" value={members.length} icon={<Users className="w-6 h-6" />} />
-          <StatCard label="アクティブな目標" value={goals.length} icon={<Target className="w-6 h-6" />} />
-          <StatCard label="登録リンク" value={links.length} icon={<LinkIcon className="w-6 h-6" />} />
+          <Link href="/members"><StatCard label="メンバー数" value={members.length} icon={<Users className="w-6 h-6" />} /></Link>
+          <Link href="/goals"><StatCard label="アクティブな目標" value={goals.filter((g) => g.status !== "完了").length} icon={<Target className="w-6 h-6" />} /></Link>
+          <Link href="/links"><StatCard label="登録リンク" value={links.length} icon={<LinkIcon className="w-6 h-6" />} /></Link>
+        </div>
+      </section>
+
+      {/* 今週の動き: 期限が近い目標 & 新しい仲間 */}
+      <section className="grid gap-6 lg:grid-cols-2">
+        {/* 期限が近い目標 */}
+        <div className="rounded-2xl border border-sky-100 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="flex items-center gap-2 text-lg font-bold text-sky-950">
+              <CalendarClock className="w-5 h-5 text-sky-500" />
+              期限が近い目標
+            </h2>
+            <Link href="/goals" className="flex items-center text-sm font-medium text-sky-600 hover:text-sky-800 transition-colors">
+              すべて見る <ChevronRight className="w-4 h-4 ml-0.5" />
+            </Link>
+          </div>
+
+          {upcomingGoals.length > 0 ? (
+            <ul className="space-y-2.5">
+              {upcomingGoals.map((g) => {
+                const member = memberMap.get(g.member_id);
+                const days = getDaysLeft(g.deadline)!;
+                const status = getDeadlineStatus(g.deadline);
+                return (
+                  <li key={g.goal_id} className="flex items-center gap-3 rounded-xl border border-slate-100 px-3.5 py-2.5">
+                    {member ? (
+                      <Avatar name={member.name} photoUrl={member.photo_url} size={36} className="border border-sky-100" />
+                    ) : (
+                      <div className="h-9 w-9 shrink-0 rounded-full bg-slate-100" />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-semibold text-slate-800">{g.title}</div>
+                      <div className="text-[11px] text-slate-400">{member?.name || `ID: ${g.member_id}`}</div>
+                    </div>
+                    {status === "overdue" ? (
+                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-bold text-red-700">
+                        <AlertTriangle className="h-3 w-3" />{Math.abs(days)}日超過
+                      </span>
+                    ) : (
+                      <span className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[11px] font-bold ${status === "soon" ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-500"}`}>
+                        あと{days}日
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <div className="rounded-xl border-2 border-dashed border-slate-100 px-4 py-8 text-center text-sm text-slate-400">
+              期限が設定された目標はまだありません。
+            </div>
+          )}
+        </div>
+
+        {/* 新しい仲間 */}
+        <div className="rounded-2xl border border-sky-100 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="flex items-center gap-2 text-lg font-bold text-sky-950">
+              <UserPlus className="w-5 h-5 text-sky-500" />
+              新しい仲間
+            </h2>
+            <Link href="/members" className="flex items-center text-sm font-medium text-sky-600 hover:text-sky-800 transition-colors">
+              すべて見る <ChevronRight className="w-4 h-4 ml-0.5" />
+            </Link>
+          </div>
+
+          {recentMembers.length > 0 ? (
+            <ul className="space-y-2.5">
+              {recentMembers.map(({ member, isNew }) => (
+                <li key={member.member_id} className="flex items-center gap-3 rounded-xl border border-slate-100 px-3.5 py-2.5">
+                  <Avatar name={member.name} photoUrl={member.photo_url} size={36} className="border border-sky-100" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="truncate text-sm font-semibold text-slate-800">{member.name}</span>
+                      {isNew && (
+                        <span className="shrink-0 rounded-full bg-rose-500 px-1.5 py-px text-[9px] font-bold text-white">NEW</span>
+                      )}
+                    </div>
+                    <div className="truncate text-[11px] text-slate-400">{member.job || "職業未設定"}</div>
+                  </div>
+                  <span className="shrink-0 text-[10px] text-slate-300">{member.updated_at}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="rounded-xl border-2 border-dashed border-slate-100 px-4 py-8 text-center text-sm text-slate-400">
+              メンバーデータがありません。
+            </div>
+          )}
         </div>
       </section>
 
       {/* クイックリンク・タイル */}
-      <section className="mt-8">
+      <section>
         <div className="flex items-center justify-between mb-4 px-1">
           <h2 className="text-lg font-bold text-sky-950">最近の共有リンク</h2>
           <Link href="/links" className="flex items-center text-sm font-medium text-sky-600 hover:text-sky-800 transition-colors">
             すべて見る <ChevronRight className="w-4 h-4 ml-0.5" />
           </Link>
         </div>
-        
+
         <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
           {recentLinks.map((l) => (
             l.url ? (
@@ -112,7 +232,7 @@ export default async function DashboardPage() {
                     {l.type || 'リンク'}
                   </span>
                 </div>
-                
+
                 <div>
                   <h3 className="font-bold text-lg text-slate-800 group-hover:text-sky-600 transition-colors line-clamp-1">
                     {l.title}
