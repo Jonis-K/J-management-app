@@ -1,0 +1,4 @@
+member_id,parent_id,name,age,gender,photo_url,job,dream,role,position,updated_at
+M00001,,山田太郎,35,男性,https://drive.google.com/file/d/ここにファイルID/view,会社員,家族と世界一周する,GM,,2026-07-01
+M00002,M00001,佐藤花子,28,女性,,美容師,自分のサロンを持つ,メンバー,left,2026-07-10
+M00003,M00001,鈴木一郎,31,男性,,エンジニア,経済的自由を手に入れる,メンバー,right,2026-07-15

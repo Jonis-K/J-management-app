@@ -1,0 +1,5 @@
+link_id,type,category,title,url,sort_order,summary,updated_at
+L00001,memo,定例会,2026-07-15 定例会メモ,https://docs.google.com/document/d/ここにドキュメントID/edit,1,新メンバーの歓迎と今月の目標確認を行いました,2026-07-15
+L00002,qa,FAQ,報酬プランのよくある質問,https://docs.google.com/document/d/ここにドキュメントID/edit,2,,2026-07-10
+L00003,attend,アテンド,佐藤花子さん アテンドシート,https://docs.google.com/spreadsheets/d/ここにシートID/edit,3,,2026-07-12
+L00004,other,ツール,公式サイト ログインページ,https://example.com/login,4,,2026-07-01
