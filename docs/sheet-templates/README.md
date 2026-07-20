@@ -39,7 +39,9 @@ SHEETS_LINKS_CSV_URL=<linksタブを開いた状態のURL>
 | member_id | ✅ | 一意のID（例: M00001）。goals との紐付けに使用 |
 | parent_id | | 紹介者の member_id。トップの人は空欄 |
 | name | ✅ | 氏名。空欄の行はスキップされる |
-| age / gender / job | | プロフィール表示用 |
+| age | | 年齢（例: 28）。プロフィール表示用 |
+| gender | | 性別（例: 男性 / 女性）。プロフィール表示用 |
+| job | | 職業（例: 美容師）。メンバーカードに表示 |
 | photo_url | | 写真URL。Google Driveの共有リンク可（「リンクを知っている全員が閲覧可」にする） |
 | dream | | 夢・目指していること（メンバーカードの主役） |
 | role | | 役職バッジ（GM など） |
